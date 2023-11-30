@@ -1,0 +1,134 @@
+use std::collections::HashMap;
+use std::io::{self, Write};
+
+struct ScrabbleGame {
+    board: Vec<Vec<Option<char>>>,
+    dictionary: HashMap<String, i32>,
+    players: Vec<Player>,
+}
+
+struct Player {
+    name: String,
+    rack: Vec<char>,
+    score: i32,
+}
+
+impl ScrabbleGame {
+    fn new() -> Self {
+        ScrabbleGame {
+            board: vec![vec![None; 15]; 15],
+            dictionary: load_dictionary(),
+            players: Vec::new(),
+        }
+    }
+
+    fn add_player(&mut self, name: &str) {
+        self.players.push(Player {
+            name: name.to_string(),
+            rack: Vec::new(),
+            score: 0,
+        });
+    }
+
+    fn start_game(&mut self) {
+        // Initialize the game, distribute tiles to players, etc.
+        // For simplicity, we'll skip these details in this example.
+    }
+
+    fn display_board(&self) {
+        for row in &self.board {
+            for cell in row {
+                match cell {
+                    Some(tile) => print!(" {} ", tile),
+                    None => print!(" . "),
+                }
+            }
+            println!();
+        }
+    }
+
+    fn display_racks(&self) {
+        for player in &self.players {
+            println!("{}'s Rack: {:?}", player.name, player.rack);
+        }
+    }
+
+    fn play_word(&mut self, player_index: usize, word: &str, row: usize, col: usize, is_horizontal: bool) -> Result<(), &'static str> {
+        // Check if the word is in the dictionary
+        if !self.dictionary.contains_key(word) {
+            return Err("Invalid word");
+        }
+
+        // Check if the word can be placed on the board
+        let mut current_col = col;
+        let mut current_row = row;
+        for letter in word.chars() {
+            if let Some(existing_tile) = self.board[current_row][current_col] {
+                if existing_tile != letter {
+                    return Err("Invalid placement");
+                }
+            }
+
+            if is_horizontal {
+                current_col += 1;
+            } else {
+                current_row += 1;
+            }
+        }
+
+        // Place the word on the board
+        current_col = col;
+        current_row = row;
+        for letter in word.chars() {
+            self.board[current_row][current_col] = Some(letter);
+
+            if is_horizontal {
+                current_col += 1;
+            } else {
+                current_row += 1;
+            }
+        }
+
+        // Update player's score and remove used tiles from the rack
+        let player = &mut self.players[player_index];
+        for letter in word.chars() {
+            if let Some(index) = player.rack.iter().position(|&x| x == letter) {
+                player.rack.remove(index);
+            } else {
+                return Err("Invalid tiles in the rack");
+            }
+        }
+
+        // Update player's score (you may want to add scoring rules)
+        player.score += word.len() as i32;
+
+        Ok(())
+    }
+}
+
+fn load_dictionary() -> HashMap<String, i32> {
+    // Load a real Scrabble dictionary or use a simple one for this example
+    let mut dictionary = HashMap::new();
+    dictionary.insert("rust".to_string(), 1);
+    dictionary.insert("game".to_string(), 2);
+    // Add more words as needed
+    dictionary
+}
+
+fn main() {
+    let mut game = ScrabbleGame::new();
+
+    // Add players
+    game.add_player("Player 1");
+    game.add_player("Player 2");
+
+    // Start the game (initialize tiles, distribute tiles to players, etc.)
+    game.start_game();
+
+    // Example play
+    game.play_word(0, "rust", 7, 7, true).unwrap();
+
+    // Display the board and racks
+    game.display_board();
+    game.display_racks();
+}
